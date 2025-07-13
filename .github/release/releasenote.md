@@ -1,7 +1,7 @@
 # GRUniChat-OneBot 适配器 v0.1.0
 
 
-## 📦 下载
+## 下载
 
 请选择适合您系统的版本进行下载：
 
@@ -18,7 +18,7 @@
 | **FreeBSD** | x64 | `GRUniChat-OneBot-Adapter-v1.0.0-freebsd-amd64` |
 | **FreeBSD** | ARM64 | `GRUniChat-OneBot-Adapter-v1.0.0-freebsd-arm64` |
 
-## 🔧 使用方法
+## 使用方法
 
 ### 基础使用
 
@@ -39,7 +39,7 @@
 command:
   require_permission: true                # 启用权限验证
   authorized_users: [123456789, 987654321]  # 授权用户QQ号列表
-  permission_denied_msg: "❌ 权限不足，您无权执行此命令"
+  permission_denied_msg: "权限不足，您无权执行此命令"
 
 # 群聊过滤配置  
 filter:
@@ -57,17 +57,17 @@ filter:
 # 无权限用户会收到拒绝消息
 ```
 
-## ✨ 主要功能
+## 主要功能
 
-### 🔐 权限控制系统
+### 权限控制系统
 ```yaml
 command:
   require_permission: true
   authorized_users: [123456789, 987654321]
-  permission_denied_msg: "❌ 权限不足，您无权执行此命令"
+  permission_denied_msg: "权限不足，您无权执行此命令"
 ```
 
-### 🎯 智能消息路由
+### 智能消息路由
 ```go
 // OneBot 群消息自动转换为 GRUniChat 格式
 {
@@ -80,7 +80,7 @@ command:
 }
 ```
 
-### 🛡️ 群组过滤系统
+### 群组过滤系统
 ```yaml
 filter:
   service_groups: [111111111, 222222222]  # 白名单群组
@@ -88,25 +88,25 @@ filter:
   message_types: ["group"]               # 仅支持群聊
 ```
 
-## 🆕 版本对比
+## 版本对比
 
 ### v1.0.0 vs 之前版本
-- ✅ **完全重构**: 从单文件重构为模块化架构
-- ✅ **权限系统**: 新增命令权限验证功能
-- ✅ **配置增强**: 自动创建和验证配置文件
-- ✅ **群聊专用**: 移除私聊支持，专注群聊场景
-- ✅ **多平台**: 支持10个平台架构的预编译版本
+- **完全重构**: 从单文件重构为模块化架构
+- **权限系统**: 新增命令权限验证功能
+- **配置增强**: 自动创建和验证配置文件
+- **群聊专用**: 移除私聊支持，专注群聊场景
+- **多平台**: 支持10个平台架构的预编译版本
 
 ---
 
-## 🚀 快速开始
+## 快速开始
 
 1. **下载**: 选择适合您系统的版本
 2. **配置**: 首次运行自动生成配置文件
 3. **修改**: 根据环境调整配置参数
 4. **启动**: 再次运行即可开始使用
 
-**📖 详细文档**: [README.md](https://github.com/your-org/grunichat-onebot/blob/main/README.md)
+**详细文档**: [README.md](https://github.com/your-org/grunichat-onebot/blob/main/README.md)
 
 **🐛 问题反馈**: [GitHub Issues](https://github.com/your-org/grunichat-onebot/issues)
 

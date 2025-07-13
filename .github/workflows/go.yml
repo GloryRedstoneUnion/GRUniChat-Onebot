@@ -1,27 +1,27 @@
-# GitHub Actions Workflow for GRUniChat-OneBot Adapter
-name: Build and Release
+# This workflow will build a golang project
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
+
+name: Go CI & Release
 
 on:
   push:
-    tags: [ 'v*' ]          # 当推送以v开头的标签时触发发布
+    tags: [ 'v*' ]
   pull_request:
-    branches: [ "main" ]    # PR到main分支时触发构建测试
+    branches: [ "main" ]
 
 jobs:
-  # 构建测试 Job
   build:
     runs-on: ubuntu-latest
-    if: github.event_name == 'pull_request' || (github.event_name == 'push' && !startsWith(github.ref, 'refs/tags/'))
-    
+    if: github.event_name != 'push' || !startsWith(github.ref, 'refs/tags/v')
     steps:
     - uses: actions/checkout@v4
 
     - name: Set up Go
       uses: actions/setup-go@v4
       with:
-        go-version: stable
+        go-version: 'stable'
 
-    - name: Download dependencies
+    - name: Download Go modules
       run: go mod download
 
     - name: Build
@@ -30,100 +30,90 @@ jobs:
     - name: Test
       run: go test -v ./...
 
-  # 发布 Job
   release:
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
-    if: startsWith(github.ref, 'refs/tags/v')
     permissions:
       contents: write
-    
     steps:
-    - uses: actions/checkout@v4
-
-    - name: Set up Go
-      uses: actions/setup-go@v4
-      with:
-        go-version: stable
-
-    - name: Download dependencies
-      run: go mod download
-
-    - name: Set version info
-      run: |
-        echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
-        echo "BUILDTIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_ENV
-
-    - name: Create dist directory
-      run: mkdir -p dist
-
-    - name: Build for multiple platforms
-      run: |
-        # Windows builds
-        GOOS=windows GOARCH=amd64 go build -ldflags "-X main.Version=$VERSION -X main.BuildTime=$BUILDTIME" -o dist/GRUniChat-OneBot-Adapter-$VERSION-windows-amd64.exe .
-        GOOS=windows GOARCH=arm64 go build -ldflags "-X main.Version=$VERSION -X main.BuildTime=$BUILDTIME" -o dist/GRUniChat-OneBot-Adapter-$VERSION-windows-arm64.exe .
+      - uses: actions/checkout@v4
+      
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: 'stable'
+          
+      - name: Download Go modules
+        run: go mod download
         
-        # Linux builds
-        GOOS=linux GOARCH=amd64 go build -ldflags "-X main.Version=$VERSION -X main.BuildTime=$BUILDTIME" -o dist/GRUniChat-OneBot-Adapter-$VERSION-linux-amd64 .
-        GOOS=linux GOARCH=arm64 go build -ldflags "-X main.Version=$VERSION -X main.BuildTime=$BUILDTIME" -o dist/GRUniChat-OneBot-Adapter-$VERSION-linux-arm64 .
-        GOOS=linux GOARCH=386 go build -ldflags "-X main.Version=$VERSION -X main.BuildTime=$BUILDTIME" -o dist/GRUniChat-OneBot-Adapter-$VERSION-linux-386 .
-        GOOS=linux GOARCH=arm go build -ldflags "-X main.Version=$VERSION -X main.BuildTime=$BUILDTIME" -o dist/GRUniChat-OneBot-Adapter-$VERSION-linux-arm .
-        
-        # macOS builds
-        GOOS=darwin GOARCH=amd64 go build -ldflags "-X main.Version=$VERSION -X main.BuildTime=$BUILDTIME" -o dist/GRUniChat-OneBot-Adapter-$VERSION-darwin-amd64 .
-        GOOS=darwin GOARCH=arm64 go build -ldflags "-X main.Version=$VERSION -X main.BuildTime=$BUILDTIME" -o dist/GRUniChat-OneBot-Adapter-$VERSION-darwin-arm64 .
-        
-        # FreeBSD builds
-        GOOS=freebsd GOARCH=amd64 go build -ldflags "-X main.Version=$VERSION -X main.BuildTime=$BUILDTIME" -o dist/GRUniChat-OneBot-Adapter-$VERSION-freebsd-amd64 .
-        GOOS=freebsd GOARCH=arm64 go build -ldflags "-X main.Version=$VERSION -X main.BuildTime=$BUILDTIME" -o dist/GRUniChat-OneBot-Adapter-$VERSION-freebsd-arm64 .
-
-    - name: Get release notes
-      id: release_notes
-      run: |
-        if [ -f ".github/release/releasenote.md" ]; then
-          echo "notes_file=.github/release/releasenote.md" >> $GITHUB_OUTPUT
-        else
-          # 如果没有发布说明文件，使用Git标签注释或默认文本
-          TAG_ANNOTATION=$(git tag -l --format='%(contents)' $VERSION)
-          if [ -n "$TAG_ANNOTATION" ]; then
-            echo "$TAG_ANNOTATION" > temp_release_notes.md
-            echo "notes_file=temp_release_notes.md" >> $GITHUB_OUTPUT
+      - name: Set version vars
+        id: vars
+        run: |
+          echo "VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          echo "BUILDTIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> $GITHUB_OUTPUT
+          
+      - name: Build Windows amd64
+        run: |
+          mkdir -p dist
+          GOOS=windows GOARCH=amd64 go build -ldflags "-X main.Version=${{ steps.vars.outputs.VERSION }} -X main.BuildTime=${{ steps.vars.outputs.BUILDTIME }}" -o dist/GRUniChat-OneBot-Adapter-${{ steps.vars.outputs.VERSION }}-windows-amd64.exe .
+          
+      - name: Build Windows arm64
+        run: |
+          GOOS=windows GOARCH=arm64 go build -ldflags "-X main.Version=${{ steps.vars.outputs.VERSION }} -X main.BuildTime=${{ steps.vars.outputs.BUILDTIME }}" -o dist/GRUniChat-OneBot-Adapter-${{ steps.vars.outputs.VERSION }}-windows-arm64.exe .
+          
+      - name: Build Linux amd64
+        run: |
+          GOOS=linux GOARCH=amd64 go build -ldflags "-X main.Version=${{ steps.vars.outputs.VERSION }} -X main.BuildTime=${{ steps.vars.outputs.BUILDTIME }}" -o dist/GRUniChat-OneBot-Adapter-${{ steps.vars.outputs.VERSION }}-linux-amd64 .
+          
+      - name: Build Linux arm64
+        run: |
+          GOOS=linux GOARCH=arm64 go build -ldflags "-X main.Version=${{ steps.vars.outputs.VERSION }} -X main.BuildTime=${{ steps.vars.outputs.BUILDTIME }}" -o dist/GRUniChat-OneBot-Adapter-${{ steps.vars.outputs.VERSION }}-linux-arm64 .
+          
+      - name: Build Linux 386
+        run: |
+          GOOS=linux GOARCH=386 go build -ldflags "-X main.Version=${{ steps.vars.outputs.VERSION }} -X main.BuildTime=${{ steps.vars.outputs.BUILDTIME }}" -o dist/GRUniChat-OneBot-Adapter-${{ steps.vars.outputs.VERSION }}-linux-386 .
+          
+      - name: Build Linux arm
+        run: |
+          GOOS=linux GOARCH=arm go build -ldflags "-X main.Version=${{ steps.vars.outputs.VERSION }} -X main.BuildTime=${{ steps.vars.outputs.BUILDTIME }}" -o dist/GRUniChat-OneBot-Adapter-${{ steps.vars.outputs.VERSION }}-linux-arm .
+          
+      - name: Build Darwin amd64
+        run: |
+          GOOS=darwin GOARCH=amd64 go build -ldflags "-X main.Version=${{ steps.vars.outputs.VERSION }} -X main.BuildTime=${{ steps.vars.outputs.BUILDTIME }}" -o dist/GRUniChat-OneBot-Adapter-${{ steps.vars.outputs.VERSION }}-darwin-amd64 .
+          
+      - name: Build Darwin arm64
+        run: |
+          GOOS=darwin GOARCH=arm64 go build -ldflags "-X main.Version=${{ steps.vars.outputs.VERSION }} -X main.BuildTime=${{ steps.vars.outputs.BUILDTIME }}" -o dist/GRUniChat-OneBot-Adapter-${{ steps.vars.outputs.VERSION }}-darwin-arm64 .
+          
+      - name: Build FreeBSD amd64
+        run: |
+          GOOS=freebsd GOARCH=amd64 go build -ldflags "-X main.Version=${{ steps.vars.outputs.VERSION }} -X main.BuildTime=${{ steps.vars.outputs.BUILDTIME }}" -o dist/GRUniChat-OneBot-Adapter-${{ steps.vars.outputs.VERSION }}-freebsd-amd64 .
+          
+      - name: Build FreeBSD arm64
+        run: |
+          GOOS=freebsd GOARCH=arm64 go build -ldflags "-X main.Version=${{ steps.vars.outputs.VERSION }} -X main.BuildTime=${{ steps.vars.outputs.BUILDTIME }}" -o dist/GRUniChat-OneBot-Adapter-${{ steps.vars.outputs.VERSION }}-freebsd-arm64 .
+          
+      - name: Get release notes
+        id: notes
+        run: |
+          if [ -f .github/release/releasenote.md ]; then
+            echo "release_notes<<EOF" >> $GITHUB_OUTPUT
+            cat .github/release/releasenote.md >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
           else
-            cat > temp_release_notes.md << 'EOF'
-        GRUniChat-OneBot Adapter $(echo $VERSION)
-        
-        ## 🎉 新版本发布
-        
-        这是 GRUniChat-OneBot 适配器的新版本。
-        
-        ### 📦 下载
-        
-        请选择适合您系统的版本进行下载：
-        
-        | 平台 | 架构 | 文件名 |
-        |------|------|--------|
-        | Windows | x64 | GRUniChat-OneBot-Adapter-*-windows-amd64.exe |
-        | Windows | ARM64 | GRUniChat-OneBot-Adapter-*-windows-arm64.exe |
-        | Linux | x64 | GRUniChat-OneBot-Adapter-*-linux-amd64 |
-        | Linux | ARM64 | GRUniChat-OneBot-Adapter-*-linux-arm64 |
-        | macOS | Intel | GRUniChat-OneBot-Adapter-*-darwin-amd64 |
-        | macOS | Apple Silicon | GRUniChat-OneBot-Adapter-*-darwin-arm64 |
-        
-        ### 🚀 快速开始
-        
-        1. 下载适合您系统的可执行文件
-        2. 首次运行程序，自动生成配置文件 `config.yaml`
-        3. 根据您的环境修改配置文件
-        4. 再次运行程序即可开始使用
-        
-        详细使用说明请参考项目 README.md。
-        EOF
-            echo "notes_file=temp_release_notes.md" >> $GITHUB_OUTPUT
+            NOTES=$(git tag -l --format='%(contents)' ${{ steps.vars.outputs.VERSION }} | tail -n +2)
+            if [ -z "$NOTES" ]; then
+              NOTES="Auto release for ${{ steps.vars.outputs.VERSION }}"
+            fi
+            echo "release_notes<<EOF" >> $GITHUB_OUTPUT
+            echo "$NOTES" >> $GITHUB_OUTPUT
+            echo "EOF" >> $GITHUB_OUTPUT
           fi
-        fi
-
-    - name: Create Release
-      uses: softprops/action-gh-release@v2
-      with:
-        files: dist/*
-        body_path: ${{ steps.release_notes.outputs.notes_file }}
-        token: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          body: ${{ steps.notes.outputs.release_notes }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
