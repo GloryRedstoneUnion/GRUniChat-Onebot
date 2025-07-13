@@ -12,6 +12,7 @@
 - ✅ **命令确认机制**：命令确认，确保命令执行状态同步
 - ✅ **自动重连机制**：WebSocket连接断开时自动重连，提高服务稳定性
 - ✅ **详细日志系统**：支持多级别日志、JSON格式输出和文件日志
+- ✅ **自动更新检查**：启动时自动检查新版本，支持跳过检查
 
 ## 快速开始
 
@@ -35,15 +36,28 @@ go build -o grunichat-onebot-adapter.exe .
 
 # 或指定配置文件路径
 .\grunichat-onebot-adapter.exe -config ./my-config.yaml
+
+# 跳过版本更新检查
+.\grunichat-onebot-adapter.exe --no-check-update
 ```
 
-程序首次运行时会自动创建配置文件并在五秒后退出
+程序首次运行时会：
+1. 显示启动横幅
+2. 检查版本更新（可通过 `--no-check-update` 跳过）
+3. 自动创建配置文件并在五秒后退出
 
 #### 正常运行
 配置文件修改完成后，再次运行即可启动服务：
 ```bash
 .\grunichat-onebot-adapter.exe
 ```
+
+### 命令行参数
+
+| 参数 | 默认值 | 说明 |
+|------|--------|------|
+| `-config` | `./config.yaml` | 指定配置文件路径 |
+| `--no-check-update` | `false` | 跳过启动时的版本更新检查 |
 
 ## 配置文件详解
 
@@ -220,6 +234,23 @@ log:
 - `Failed to connect` - 连接失败
 - `Message filtered` - 消息被过滤
 - `Command confirmation sent` - 命令确认已发送
+
+### 6. 版本检查问题
+**问题**: 版本检查失败或超时
+**解决**:
+- 网络连接问题：检查是否可以访问 GitHub API
+- 超时问题：版本检查会在5秒后超时，这不影响程序正常运行
+- 跳过检查：使用 `--no-check-update` 参数跳过版本检查
+- 企业环境：在受限网络环境中建议使用 `--no-check-update` 参数
+
+**示例**:
+```bash
+# 跳过版本检查
+.\grunichat-onebot-adapter.exe --no-check-update
+
+# 或者结合其他参数
+.\grunichat-onebot-adapter.exe -config ./my-config.yaml --no-check-update
+```
 
 ## 开发指南
 

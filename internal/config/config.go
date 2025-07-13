@@ -145,7 +145,7 @@ command:
   enable_command_routing: true            # 是否启用命令路由
   require_permission: true                # 是否启用权限验证
   authorized_users: []                    # 有权限执行命令的用户QQ号列表，例如: [123456789, 987654321]
-  permission_denied_msg: "❌ 权限不足，您无权执行此命令"  # 权限不足时的回复消息
+  permission_denied_msg: "权限不足，您无权执行此命令"  # 权限不足时的回复消息
 
 # 消息格式配置
 format:
@@ -214,7 +214,7 @@ func setConfigDefaults(config *Config) {
 
 	// 设置命令权限默认值
 	if config.Command.PermissionDeniedMsg == "" {
-		config.Command.PermissionDeniedMsg = "❌ 权限不足，您无权执行此命令"
+		config.Command.PermissionDeniedMsg = "权限不足，您无权执行此命令"
 	}
 }
 
