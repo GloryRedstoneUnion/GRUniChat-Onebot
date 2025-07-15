@@ -244,6 +244,12 @@ func (mc *MessageConverter) broadcastToServiceGroups(gruni *types.GRUniChatMessa
 
 // 发送消息到指定群组
 func (mc *MessageConverter) sendToSpecificGroup(gruni *types.GRUniChatMessage, groupID int64) {
+	// 检查是否需要过滤命令执行结果消息
+	if mc.config.Filter.FilterCommandExecutions && mc.isCommandExecutionMessage(gruni) {
+		mc.logger.Debugf("Filtered command execution message from %s: %s", gruni.From, gruni.Body.EventDetail)
+		return
+	}
+
 	var message string
 
 	// 根据消息类型格式化内容
@@ -310,4 +316,30 @@ func (mc *MessageConverter) sendPermissionDeniedReply(onebot *types.OneBotMessag
 	} else {
 		mc.logger.Warnf("Permission denied reply only supported for group messages, ignoring %s message", onebot.MessageType)
 	}
+}
+
+// 检测是否为命令执行结果消息
+func (mc *MessageConverter) isCommandExecutionMessage(gruni *types.GRUniChatMessage) bool {
+	// 只检查事件类型的消息
+	if gruni.Type != "event" {
+		return false
+	}
+
+	eventDetail := strings.ToLower(gruni.Body.EventDetail)
+
+	// 检查是否包含命令执行相关的关键词
+	commandKeywords := []string{
+		"executed command",  // 执行命令
+		"player executed",   // 玩家执行
+		"changed the block", // 更改方块
+		"command ->",        // 命令箭头
+	}
+
+	for _, keyword := range commandKeywords {
+		if strings.Contains(eventDetail, keyword) {
+			return true
+		}
+	}
+
+	return false
 }

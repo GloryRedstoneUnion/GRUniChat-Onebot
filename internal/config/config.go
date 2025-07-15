@@ -31,9 +31,10 @@ type Config struct {
 	} `yaml:"log"`
 
 	Filter struct {
-		ServiceGroups  []int64  `yaml:"service_groups"` // 提供服务的群聊列表
-		BlacklistUsers []int64  `yaml:"blacklist_users"`
-		MessageTypes   []string `yaml:"message_types"`
+		ServiceGroups           []int64  `yaml:"service_groups"` // 提供服务的群聊列表
+		BlacklistUsers          []int64  `yaml:"blacklist_users"`
+		MessageTypes            []string `yaml:"message_types"`
+		FilterCommandExecutions bool     `yaml:"filter_command_executions"` // 是否过滤命令执行结果消息
 	} `yaml:"filter"`
 
 	Command struct {
@@ -139,6 +140,7 @@ filter:
   service_groups: []                      # 提供服务的群聊ID列表，空数组表示所有群聊
   blacklist_users: []                     # 黑名单用户ID列表
   message_types: ["group"]                # 处理的消息类型（仅支持群聊）
+  filter_command_executions: false        # 是否过滤命令执行结果消息
 
 # 命令配置
 command:

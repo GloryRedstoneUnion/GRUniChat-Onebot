@@ -86,6 +86,7 @@ filter:
   service_groups: []                      # 提供服务的群聊ID列表，空数组表示所有群聊
   blacklist_users: []                     # 黑名单用户ID列表
   message_types: ["group"]                # 处理的消息类型（仅支持群聊）
+  filter_command_executions: false        # 是否过滤命令执行结果消息（防止刷屏）
 ```
 
 ### 命令权限配置
@@ -170,148 +171,25 @@ command:
 系统回复: ❌ 权限不足，您无权执行此命令
 ```
 
-## 部署指南
+### 命令执行结果过滤
 
-### 开发环境
-```bash
-# 1. 确保 Go 1.21+ 已安装
-go version
+系统支持过滤来自游戏客户端的命令执行结果消息，避免批量操作时的消息刷屏：
 
-# 2. 克隆项目
-git clone <repository-url>
-cd GRUniChat-Onebot
-
-# 3. 安装依赖
-go mod tidy
-
-# 4. 运行项目
-go run main.go
-```
-
-## 故障排除
-
-### 1. 配置文件问题
-**问题**: 程序启动后立即退出，提示配置文件创建
-**解决**: 
-- 检查程序是否有写入权限
-- 修改生成的 `config.yaml` 文件中的关键配置
-- 确保 GRUniChat 和 OneBot 服务器地址正确
-
-### 2. WebSocket 连接失败
-**问题**: 连接 GRUniChat 或 OneBot 服务器失败
-**解决**:
-- 检查服务器是否正在运行：`telnet <host> <port>`
-- 确认 WebSocket URL 格式正确（以 `ws://` 或 `wss://` 开头）
-- 检查防火墙和网络设置
-- 查看详细日志：将日志级别设置为 `debug`
-
-### 3. 消息过滤问题
-**问题**: 消息没有被转发或被错误过滤
-**解决**:
-- 检查 `filter.service_groups` 配置，空数组表示服务所有群
-- 确认用户不在黑名单 `filter.blacklist_users` 中
-- 检查 `filter.message_types` 是否包含所需的消息类型
-
-### 4. 性能问题
-**问题**: 消息处理延迟或丢失
-**解决**:
-- 增加 `performance.message_queue_size`
-- 调整 `performance.worker_count` 工作协程数量
-- 检查系统资源使用情况
-- 监控日志中的队列满载警告
-
-### 5. 日志分析
-启用详细日志进行问题诊断：
+**过滤配置**：
 ```yaml
-log:
-  level: "debug"
-  format: "json"  # JSON格式便于分析
-  file: "adapter.log"
+filter:
+  filter_command_executions: true    # 启用命令执行结果过滤
 ```
 
-常见日志关键字：
-- `WebSocket connection established` - 连接成功
-- `Failed to connect` - 连接失败
-- `Message filtered` - 消息被过滤
-- `Command confirmation sent` - 命令确认已发送
+**会被过滤的消息类型**：
+- `<[redstone]> [redstone] Player The_skyM executed command: command -> - 易碎深板岩`
+- `<[creative]> [creative] Player awszqsedxzaw executed command: command -> Changed the block at -912, 139, -603`
+- `<[redstone]> [redstone] Player _XuanMing_ executed command: command -> Successfully filled 2 block(s)`
 
-### 6. 版本检查问题
-**问题**: 版本检查失败或超时
-**解决**:
-- 网络连接问题：检查是否可以访问 GitHub API
-- 超时问题：版本检查会在5秒后超时，这不影响程序正常运行
-- 跳过检查：使用 `--no-check-update` 参数跳过版本检查
-- 企业环境：在受限网络环境中建议使用 `--no-check-update` 参数
+**使用场景**：
+- 大批量方块编辑操作
+- 自动化脚本执行
+- 避免QQ群聊被命令执行日志刷屏
 
-**示例**:
-```bash
-# 跳过版本检查
-.\grunichat-onebot-adapter.exe --no-check-update
-
-# 或者结合其他参数
-.\grunichat-onebot-adapter.exe -config ./my-config.yaml --no-check-update
-```
-
-## 开发指南
-
-### 项目结构
-```
-GRUniChat-Onebot/
-├── main.go                    # 程序入口点
-├── go.mod                     # Go 模块依赖
-├── go.sum                     # 依赖校验文件
-├── config.yaml               # 配置文件（运行时生成）
-├── .gitignore                # Git 忽略文件
-├── README.md                 # 项目文档
-└── internal/                 # 内部包目录
-    ├── adapter/              # 主适配器逻辑
-    │   └── adapter.go
-    ├── config/               # 配置管理
-    │   └── config.go
-    ├── websocket/            # WebSocket 客户端
-    │   └── websocket.go
-    ├── types/                # 数据类型定义
-    │   └── types.go
-    ├── formatter/            # 消息格式化
-    │   └── formatter.go
-    ├── sender/               # 消息发送
-    │   └── sender.go
-    ├── confirmation/         # 命令确认
-    │   └── confirmation.go
-    └── converter/            # 消息转换
-        └── converter.go
-```
-
-## 贡献指南
-
-我们欢迎各种形式的贡献！在贡献之前，请阅读以下指南：
-
-### 如何贡献
-
-1. **报告问题**: 在 GitHub Issues 中报告 bug 或提出功能建议
-2. **提交代码**: Fork 项目，创建功能分支，提交 Pull Request
-3. **完善文档**: 改进 README、注释或添加示例
-4. **测试**: 帮助测试新功能或报告兼容性问题
-
-## 许可证
-
-本项目采用 MIT 许可证 - 详情请参考 [LICENSE](LICENSE) 文件。
-
-## 联系我们
-
-- **项目主页**: [GitHub Repository](https://github.com/your-org/grunichat-onebot)
-- **问题报告**: [GitHub Issues](https://github.com/your-org/grunichat-onebot/issues)
-- **开发团队**: Glory Redstone Union
-- **维护者**: caikun233
-
-## 致谢
-
-感谢以下开源项目的支持：
-- [OneBot](https://11.onebot.dev) - QQ 机器人标准协议
-- [Gorilla WebSocket](https://github.com/gorilla/websocket) - Go WebSocket 实现
-- [Logrus](https://github.com/sirupsen/logrus) - Go 结构化日志库
-
----
-
-**🎯 让跨平台消息同步变得简单高效！**
+**注意**：启用此过滤器后，所有包含 "executed command"、"changed the block"、"successfully filled" 等关键词的事件消息都会被过滤。
 
